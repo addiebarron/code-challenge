@@ -1,4 +1,4 @@
-do# Extend the base Python image
+# Extend the base Python image
 # See https://hub.docker.com/_/python for version options
 # N.b., there are many options for Python images. We used the plain
 # version number in the pilot. YMMV. See this post for a discussion of
