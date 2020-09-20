@@ -14,31 +14,37 @@ class AddressParse(APIView):
     renderer_classes = [JSONRenderer]
 
     def get(self, request):
-        # TODO: Flesh out this method to parse an address string using the
-        # parse() method and return the parsed components to the frontend.
+        '''Process a request to this API endpoint and return data representing the results of processing.'''
 
+        # Grab the address from our request data
         address = request.query_params.get('address');
 
         try:
+            # Parse the address
             address_components, address_type = self.parse(address);
+
+            # Return the results of a successful parse
             response = {
+                'inputString': address,
                 'components': address_components,
                 'type': address_type
             }
         except Exception as exception:
+            # Grab the name of the exception as a string
             exception_name = type(exception).__name__
+
+            # Send a response describing the error
             response = {
                 'error': True,
                 'exceptionName': exception_name,
                 'detail': 'Unable to parse.'
-                # Finer exception handling would be a nice next step I think
+                # Finer exception handling would be a nice next step I think - wasn't able to find documentation on the other types of exceptions thrown by usaddress.
             }
 
         return Response(response)
 
     def parse(self, address):
-        # TODO: Implement this method to return the parsed components of a
-        # given address using usaddress: https://github.com/datamade/usaddress
+        '''Use the usaddress module to parse a given address into two fields: the type of the address as a string, and its tagged component parts as an OrderedDict.'''
 
         address_components, address_type = usaddress.tag(address);
 

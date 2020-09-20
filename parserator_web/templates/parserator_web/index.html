@@ -44,29 +44,38 @@
 
 {% block extra_js %}
   <script type="text/javascript">
+
+    // Wire up the main form
     $(() => {
       $('#parse-form').on('submit', onSubmit);
     });
 
+    // Handle the form submission
     const onSubmit = async e => {
+      // "Submit" event reloads the page by default, so:
       e.preventDefault();
 
       let response;
 
-      const formElems = e.target.elements;
+      // Serialize our form data
+      const formElems = e.target.elements; 
       const data = {
-        address: formElems.address.value
+        address: formElems.address.value // More scalable than $('#address').val() :)
       }
 
+      // Send the AJAX request with our form data, catching any errors
       try {
         response = await sendRequest(data);
       } catch (err) {
         onAJAXError(err);
       }
 
+      // Currently, an empty response is not handled. Not sure why it would need to be, but worth including here or in views.py later
+
       if (response) onAJAXResponse(response);
     }
 
+    // Send an AJAX request with data to the API
     const sendRequest = async data => {
       // Good to have this in a separate function in case we want to work with headers or other AJAX params here
       return await $.get({
@@ -76,41 +85,47 @@
       });
     }
 
+    // Handle response from the request
     const onAJAXResponse = res => {
-      console.log(res);
+      // Hide any currently displayed sections
       $('.result').hide();
 
+      // Send to renderers
       if (res.error) {
         onParseError(res.exceptionName)
       } else {
-        renderResults(res);
+        showParseResults(res);
       }
     }
 
+    // Handle errors in the request
     const onAJAXError = err => {
-      console.log('Error in AJAX request.');
       $('#request-error').show();
     }
 
+    // Handle any backend parsing exceptions, and show the user the error
     const onParseError = err => {
-      console.log('Error parsing address.')
       $('#address-parse-error')
         .show()
         .find('.exception-name')
         .text(err)
     }
 
-    const renderResults = res => {
-      const { components, type } = res;
+    // On a good response, render the appropriate HTML
+    const showParseResults = res => {
+      const { components, type } = res; // Assuming structure we sent in views.py
 
       const $results = $('#address-results'),
             $type = $('#parse-type'),
             $tbody = $results.find('table>tbody');
 
-      $tbody.empty();
-
+      // Write the address type
       $type.text(type);
 
+      // Clear out any previous table rows
+      $tbody.empty();
+
+      // Write rows to the table
       $.each(components, (part, tag) => {
         $(`<tr>
             <th>${part}</th>
@@ -119,6 +134,7 @@
           .appendTo($tbody);
       });
 
+      // Show the results
       $results.show();
     }
   </script>
