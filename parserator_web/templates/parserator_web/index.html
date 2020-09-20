@@ -32,7 +32,7 @@
         </table>
       </div>
       <div id="address-parse-error" class="result error">
-        <h4>Unable to parse that address: </h4>
+        <h4>Unable to parse that address: <span class="exception-name"></span></h4>
       </div>
       <div id="request-error" class="result error">
         <h4>Couldn't contact the server. Try again in a sec!</h4>
@@ -96,9 +96,8 @@
       console.log('Error parsing address.')
       $('#address-parse-error')
         .show()
-        .find('h4')
-        .append(`<span>${err}</span>`)
-        
+        .find('.exception-name')
+        .text(err)
     }
 
     const renderResults = res => {
