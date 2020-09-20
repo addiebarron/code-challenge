@@ -1,1 +1,9 @@
 /* Add custom style overrides here. */
+
+.result {
+	display: none;
+}
+
+.result.error span {
+	color: red;
+}

@@ -11,14 +11,13 @@
       <p>Dealing with some messy or unstructured addresses? We can parse them for you.</p>
       <div class="card card-body bg-light">
         <p><strong>Try it out!</strong> Parse an address in the United States into fields like <code>AddressNumber</code>, <code>StreetName</code> and <code>ZipCode</code>.</p>
-        <form class="form" role="form">
+        <form id="parse-form" class="form" role="form">
           {% csrf_token %}
           <input name="address" type="text" class="form-control" id="address" placeholder="123 Main St. Suite 100 Chicago, IL">
           <button id="submit" type="submit" class="btn btn-success mt-3">Parse!</button>
         </form>
       </div>
-      <!-- TODO: Display parsed address components here. -->
-      <div id="address-results" style="display:none">
+      <div id="address-results" class="result">
         <h4>Parsing results</h4>
         <p>Address type: <strong><span id="parse-type"></span></strong></p>
         <table class="table table-bordered">
@@ -32,6 +31,12 @@
           </tbody>
         </table>
       </div>
+      <div id="address-parse-error" class="result error">
+        <h4>Unable to parse that address: </h4>
+      </div>
+      <div id="request-error" class="result error">
+        <h4>Couldn't contact the server. Try again in a sec!</h4>
+      </div>
     </div>
   </div>
 </div>
@@ -39,7 +44,83 @@
 
 {% block extra_js %}
   <script type="text/javascript">
-    /* TODO: Flesh this out to connect the form to the API and render results
-    in the #address-results div. */
+    $(() => {
+      $('#parse-form').on('submit', onSubmit);
+    });
+
+    const onSubmit = async e => {
+      e.preventDefault();
+
+      let response;
+
+      const formElems = e.target.elements;
+      const data = {
+        address: formElems.address.value
+      }
+
+      try {
+        response = await sendRequest(data);
+      } catch (err) {
+        onAJAXError(err);
+      }
+
+      if (response) onAJAXResponse(response);
+    }
+
+    const sendRequest = async data => {
+      // Good to have this in a separate function in case we want to work with headers or other AJAX params here
+      return await $.get({
+        url: "api/parse/",
+        data: data,
+        dataType: "json",
+      });
+    }
+
+    const onAJAXResponse = res => {
+      console.log(res);
+      $('.result').hide();
+
+      if (res.error) {
+        onParseError(res.exceptionName)
+      } else {
+        renderResults(res);
+      }
+    }
+
+    const onAJAXError = err => {
+      console.log('Error in AJAX request.');
+      $('#request-error').show();
+    }
+
+    const onParseError = err => {
+      console.log('Error parsing address.')
+      $('#address-parse-error')
+        .show()
+        .find('h4')
+        .append(`<span>${err}</span>`)
+        
+    }
+
+    const renderResults = res => {
+      const { components, type } = res;
+
+      const $results = $('#address-results'),
+            $type = $('#parse-type'),
+            $tbody = $results.find('table>tbody');
+
+      $tbody.empty();
+
+      $type.text(type);
+
+      $.each(components, (part, tag) => {
+        $(`<tr>
+            <th>${part}</th>
+            <th>${tag}</th>
+          </tr>`)
+          .appendTo($tbody);
+      });
+
+      $results.show();
+    }
   </script>
 {% endblock %}
