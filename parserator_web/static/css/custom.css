@@ -1,13 +1,13 @@
 /* Add custom style overrides here. */
 
 .result {
-    display: none;
-    margin-top: 15px;
+  display: none;
+  margin-top: 15px;
 }
 .result tbody th {
-    font-weight: 300;
+  font-weight: 300;
 }
 
 .result.error span {
-    color: red;
+  color: red;
 }

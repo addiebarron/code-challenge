@@ -34,7 +34,7 @@
       <div id="address-parse-error" class="result error">
         <h4>Unable to parse that address: <span class="exception-name"></span></h4>
       </div>
-      <div id="request-error" class="result error">
+      <div id="server-error" class="result error">
         <h4>Couldn't contact the server. Try again in a sec!</h4>
       </div>
     </div>
@@ -66,13 +66,10 @@
       // Send the AJAX request with our form data, catching any errors
       try {
         response = await sendRequest(data);
+        onAJAXSuccess(response);
       } catch (err) {
-        onAJAXError(err);
+        onAJAXError(err, err.responseJSON);
       }
-
-      // Currently, an empty response is not handled. Not sure why it would need to be, but worth including here or in views.py later
-
-      if (response) onAJAXResponse(response);
     }
 
     // Send an AJAX request with data to the API
@@ -85,48 +82,39 @@
       });
     }
 
-    // Handle response from the request
-    const onAJAXResponse = res => {
-      // Hide any currently displayed sections
+    // Handle errors in the request
+    const onAJAXError = (err, res) => {
       $('.result').hide();
 
-      // Send to renderers
-      if (res.error) {
-        onParseError(res.exceptionName)
+      const isInternalError = Math.floor(err.status / 100) == 5;
+
+      if (isInternalError) {
+        console.error(res.message);
+        $('#address-parse-error')
+          .show()
+          .find('.exception-name')
+          .text(res.error)
       } else {
-        showParseResults(res);
+        $('#server-error').show();
       }
-    }
-
-    // Handle errors in the request
-    const onAJAXError = err => {
-      $('#request-error').show();
-    }
-
-    // Handle any backend parsing exceptions, and show the user the error
-    const onParseError = err => {
-      $('#address-parse-error')
-        .show()
-        .find('.exception-name')
-        .text(err)
+      
     }
 
     // On a good response, render the appropriate HTML
-    const showParseResults = res => {
-      const { components, type } = res; // Assuming structure we sent in views.py
-
+    const onAJAXSuccess = res => {
+      // Store some elements
       const $results = $('#address-results'),
             $type = $('#parse-type'),
             $tbody = $results.find('table>tbody');
 
       // Write the address type
-      $type.text(type);
+      $type.text(res.type);
 
       // Clear out any previous table rows
       $tbody.empty();
 
       // Write rows to the table
-      $.each(components, (part, tag) => {
+      $.each(res.components, (part, tag) => {
         $(`<tr>
             <th>${part}</th>
             <th>${tag}</th>

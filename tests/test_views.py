@@ -1,32 +1,39 @@
 import pytest
 
 
-def test_api_parse_succeeds(client):
-    '''Test that the API parses a valid address string successfully and returns data in the correct structure.'''
-    
-    address_string = '123 main st chicago il'
-    
-    response = client.get('/api/parse/', {'address': address_string })
-    
-    assert response.data == {
-        'inputString': address_string,
-        'components': {
-            'AddressNumber':        '123',
-            'StreetName':           'main',
-            'StreetNamePostType':   'st',
-            'PlaceName':            'chicago',
-            'StateName':            'il',
-        }, 
-        'type': 'Street Address'
-    }
+@pytest.mark.parametrize(
+    'address,expected_status,expected_data',
+    [
+        (
+            '123 main st chicago il',
+            200,
+            {
+                'status': 'success',
+                'inputString': '123 main st chicago il',
+                'components': {
+                    'AddressNumber':        '123',
+                    'StreetName':           'main',
+                    'StreetNamePostType':   'st',
+                    'PlaceName':            'chicago',
+                    'StateName':            'il',
+                },
+                'type': 'Street Address',
+            }
+        ),
+        (
+            '123 main st chicago il 123 main st',
+            500,
+            {
+                'status': 'error',
+                'error': 'RepeatedLabelError',
+                'message': 'The server encountered an error parsing that address.',
+            },
+        ),
+    ],
+)
+def test_api_parse(client, address, expected_data, expected_status):
+    '''Test that the API handles both a valid and an invalid address string and returns data in the correct structure as well as a correct status code.'''
 
+    response = client.get('/api/parse/', {'address': address})
 
-def test_api_parse_raises_error(client):
-    '''Test that the API returns an exception when parsing an invalid string string successfully and returns the correct exception name.'''
-    
-    address_string = '123 main st chicago il 123 main st'
-    
-    response = client.get('/api/parse/', {'address': address_string})
-    # Could this call ^ be fixturized for DRYer code? 
-    
-    assert response.data['error'] == True and response.data['exceptionName'] == 'RepeatedLabelError'
+    assert response.data == expected_data and response.status_code == expected_status
